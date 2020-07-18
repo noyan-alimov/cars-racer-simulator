@@ -89,10 +89,14 @@ async function handleCreateRace() {
 
   // The race has been created, now start the countdown
   // TODO - call the async function runCountdown
-  const startRace = await runCountdown();
+  const countDownFinished = await runCountdown();
 
   // TODO - call the async function startRace
-  console.log(startRace);
+  console.log(store.race_id);
+  if (countDownFinished) {
+    const data = await startRace(store.race_id);
+    console.log(data);
+  }
 
   // TODO - call the async function runRace
 }
@@ -123,11 +127,17 @@ async function runCountdown() {
     let timer = 3;
 
     return new Promise(resolve => {
-			// TODO - use Javascript's built in setInterval method to count down once per second
-			setInterval(, 1000)
+      // TODO - use Javascript's built in setInterval method to count down once per second
+      let countdown = setInterval(() => {
+        --timer;
+        document.getElementById('big-numbers').innerHTML = timer;
+        if (timer === 0) {
+          clearInterval(countdown);
+          resolve(true);
+        }
+      }, 1000);
 
-      // run this DOM manipulation to decrement the countdown for the user
-      document.getElementById('big-numbers').innerHTML = --timer;
+      // // run this DOM manipulation to decrement the countdown for the user
 
       // TODO - if the countdown is done, clear the interval, resolve the promise, and return
     });
@@ -185,7 +195,7 @@ function renderRacerCars(racers) {
 
   return `
 		<ul id="racers">
-			${reuslts}
+			${results}
 		</ul>
 	`;
 }
@@ -321,12 +331,26 @@ function defaultFetchOpts() {
 
 // TODO - Make a fetch call (with error handling!) to each of the following API endpoints
 
-function getTracks() {
+async function getTracks() {
   // GET request to `${SERVER}/api/tracks`
+  try {
+    const res = await fetch(`${SERVER}/api/tracks`);
+    const data = res.json();
+    return data;
+  } catch (err) {
+    console.log('Error at getTracks()', err);
+  }
 }
 
-function getRacers() {
+async function getRacers() {
   // GET request to `${SERVER}/api/cars`
+  try {
+    const res = await fetch(`${SERVER}/api/cars`);
+    const data = res.json();
+    return data;
+  } catch (err) {
+    console.log('Error at getRacers()', err);
+  }
 }
 
 function createRace(player_id, track_id) {
@@ -346,15 +370,22 @@ function createRace(player_id, track_id) {
 
 function getRace(id) {
   // GET request to `${SERVER}/api/races/${id}`
+  fetch(`${SERVER}/api/races/${id}`)
+    .then(res => res.json())
+    .then(data => data)
+    .catch(err => console.log('Error getRace()', err));
 }
 
-function startRace(id) {
-  return fetch(`${SERVER}/api/races/${id}/start`, {
-    method: 'POST',
-    ...defaultFetchOpts()
-  })
-    .then(res => res.json())
-    .catch(err => console.log('Problem with getRace request::', err));
+async function startRace(id) {
+  try {
+    const res = await fetch(`${SERVER}/api/races/${id}/start`, {
+      method: 'POST',
+      ...defaultFetchOpts()
+    });
+    return await res.json();
+  } catch (err) {
+    return console.log('Problem with getRace request::', err);
+  }
 }
 
 function accelerate(id) {
